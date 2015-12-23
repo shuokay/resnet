@@ -13,7 +13,7 @@ def ConvFactory(data, num_filter, kernel, stride=(1, 1), pad=(0, 0), act_type = 
     act = mx.symbol.Activation(data=bn, act_type=act_type)
     return act
 
-def ResidualFactory(data, num_filter, diff_dim=False):
+def ResidualFactory(data, num_filter, diff_dim=False, stage1=False):
     if diff_dim:
         conv1 = ConvFactory(          data=data,  num_filter=num_filter[0], kernel=(1,1), stride=(2,2), pad=(0,0))
         conv2 = ConvFactory(          data=conv1, num_filter=num_filter[1], kernel=(3,3), stride=(1,1), pad=(1,1))
@@ -24,7 +24,7 @@ def ResidualFactory(data, num_filter, diff_dim=False):
         act   = mx.symbol.Activation(data=bn, act_type='relu')
         return act
     else:
-        _data = data
+        _data=data
         conv1 = ConvFactory(data=data,  num_filter=num_filter[0], kernel=(1,1), stride=(1,1), pad=(0,0))
         conv2 = ConvFactory(data=conv1, num_filter=num_filter[1], kernel=(3,3), stride=(1,1), pad=(1,1))
         conv3 = ConvFactory(data=conv2, num_filter=num_filter[2], kernel=(1,1), stride=(1,1), pad=(0,0))
@@ -36,7 +36,14 @@ def ResidualSymbol(data):
     "stage 1"
     for i in xrange(3):
         if i == 0:
-            data = ResidualFactory(data, (64, 64, 256), True)
+            _data = mx.symbol.Convolution(data=data,  num_filter=256,  kernel=(1,1), stride=(1,1), pad=(0,0))
+            conv1 = ConvFactory(          data=data,  num_filter=64,   kernel=(1,1), stride=(1,1), pad=(0,0))
+            conv2 = ConvFactory(          data=conv1, num_filter=64,   kernel=(3,3), stride=(1,1), pad=(1,1))
+            conv3 = mx.symbol.Convolution(data=conv2, num_filter=256,  kernel=(1,1), stride=(1,1), pad=(0,0))
+            data  = _data+conv3
+            bn    = mx.symbol.BatchNorm(data=data)
+            act   = mx.symbol.Activation(data=bn, act_type='relu')
+            data  = act
         else:
             data = ResidualFactory(data, (64, 64, 256))
     "stage 2"
@@ -60,7 +67,7 @@ def ResidualSymbol(data):
     return data
 
 
-def get_dataiter(batch_size = 16):
+def get_dataiter(batch_size = 8):
     train_dataiter = mx.io.ImageRecordIter(
         path_imgrec        = "./train.rec",
         rand_crop          = True,
@@ -101,7 +108,7 @@ if __name__=='__main__':
     "uncomment the following two line to visualize resnet"
     # g=mx.visualization.plot_network(softmax)
     # g.view()
-
     model = mx.model.FeedForward(ctx=mx.gpu(0), symbol=softmax, num_epoch=10, learning_rate=0.1, momentum=0.9, wd=0.0001,initializer=mx.init.Uniform(0.07))
     train_dataiter, test_dataiter = get_dataiter()
-    model.fit(X=train_dataiter, eval_data=test_dataiter, batch_end_callback=mx.callback.Speedometer(1024))
+    model.fit(X=train_dataiter, eval_data=test_dataiter, batch_end_callback=mx.callback.Speedometer(8))
+
