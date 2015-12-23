@@ -1,4 +1,10 @@
-# pylint: skip-file
+#!/usr/bin/env python 
+'''
+Author: Yushu Gao
+Email: shuokay@gmail.com
+MSRA Paper: http://arxiv.org/pdf/1512.03385v1.pdf
+'''
+
 import mxnet as mx
 import logging
 def ConvFactory(data, num_filter, kernel, stride=(1, 1), pad=(0, 0), act_type = 'relu'):
