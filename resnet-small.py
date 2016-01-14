@@ -93,7 +93,7 @@ if __name__=='__main__':
     # g.view()
     batch_size = 128
     train_dataiter, test_dataiter = get_dataiter(batch_size=batch_size)
-    finetune=False
+    finetune=True
     if finetune==False:
         model = mx.model.FeedForward(ctx=mx.gpu(0), symbol=softmax, num_epoch=70, learning_rate=0.1, momentum=0.9, wd=0.0001, \
                                  initializer=mx.init.Xavier(rnd_type='gaussian', factor_type="in", magnitude=2),
@@ -103,6 +103,6 @@ if __name__=='__main__':
                                  )
         model.fit(X=train_dataiter, eval_data=test_dataiter, batch_end_callback=mx.callback.Speedometer(batch_size),epoch_end_callback=mx.callback.do_checkpoint("./models/resnet"))
     else:
-        loaded = mx.model.FeedForward.load('models/resnet', 70)
+        loaded = mx.model.FeedForward.load('models/resnet', 100)
         continue_model = mx.model.FeedForward(ctx=mx.gpu(0), symbol = loaded.symbol, arg_params = loaded.arg_params, aux_params = loaded.aux_params, num_epoch=10000, learning_rate=0.01, momentum=0.9, wd=0.0001)
         continue_model.fit(X=train_dataiter, eval_data=test_dataiter, batch_end_callback=mx.callback.Speedometer(batch_size),epoch_end_callback=mx.callback.do_checkpoint("./models/resnet"))
