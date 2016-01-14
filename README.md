@@ -1,7 +1,7 @@
 # Deep Residual Net
 Example code for [Deep Residual Learning for Image Recognition](http://arxiv.org/abs/1512.03385)  
 * Run this script by ```python resnet-small.py``` for 100 epochs get a train accuracy around 89.47% and validation accuracy around 85.95%  
-* Then change the learning rate to 0.01, running this training from 70th epoch for 50 iterations, and get a train accuracy around 98.72% and test accuracy around 89.77%  
+* Then change the learning rate to 0.01, running this training from 100th epoch for 50 iterations, and get a train accuracy around 98.72% and test accuracy around 89.77%  
 
 ## Differences to the Paper
 * 1*1 convolution operators are used for increasing dimensions.
