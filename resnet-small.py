@@ -77,23 +77,19 @@ def get_dataiter(batch_size=128):
 
 if __name__=='__main__':
     logging.basicConfig(level=logging.DEBUG)
-    "before residual net"
-    data    = ConvFactory(data=mx.symbol.Variable(name='data'), num_filter=16, kernel=(3,3), stride=(1,1), pad=(1,1))
-    "get residual net"
-    res     = ResidualSymbol(data)
-    "global pooling + classify"
-    pool    = mx.symbol.Pooling(data=res, kernel=(7,7), pool_type='avg')
+    data    = ConvFactory(data=mx.symbol.Variable(name='data'), num_filter=16, kernel=(3,3), stride=(1,1), pad=(1,1)) # before residual net
+    res     = ResidualSymbol(data) # get residual net
+    pool    = mx.symbol.Pooling(data=res, kernel=(7,7), pool_type='avg') # global pooling + classify
     flatten = mx.symbol.Flatten(data=pool, name='flatten')
-    "set num_hidden=1000 when test on ImageNet competition dataset"
-    fc      = mx.symbol.FullyConnected(data=flatten, num_hidden=10, name='fc1')
+    fc      = mx.symbol.FullyConnected(data=flatten, num_hidden=10, name='fc1') # set num_hidden=1000 when test on ImageNet competition dataset
     softmax = mx.symbol.SoftmaxOutput(data=fc, name='softmax')
 
-    "uncomment the following two line to visualize resnet"
-    # g=mx.visualization.plot_network(softmax)
-    # g.view()
+    # uncomment the following two line to visualize resnet
+    g=mx.visualization.plot_network(softmax)
+    g.render(filename='resnet', cleanup=True)
     batch_size = 128
     train_dataiter, test_dataiter = get_dataiter(batch_size=batch_size)
-    finetune=True
+    finetune=False
     if finetune==False:
         model = mx.model.FeedForward(ctx=mx.gpu(0), symbol=softmax, num_epoch=70, learning_rate=0.1, momentum=0.9, wd=0.0001, \
                                  initializer=mx.init.Xavier(rnd_type='gaussian', factor_type="in", magnitude=2),
@@ -101,7 +97,11 @@ if __name__=='__main__':
                                  # initializer=mx.init.Normal(),
                                 lr_scheduler=mx.lr_scheduler.FactorScheduler(step =100000000000, factor = 0.95)
                                  )
-        model.fit(X=train_dataiter, eval_data=test_dataiter, batch_end_callback=mx.callback.Speedometer(batch_size),epoch_end_callback=mx.callback.do_checkpoint("./models/resnet"))
+        moniter=mx.monitor.Monitor(1)
+        batch_end_callback=[mx.callback.Speedometer(batch_size=batch_size, frequent=100),
+                            # mx.callback.ProgressBar(50000.0/batch_size)
+        ]
+        model.fit(X=train_dataiter, eval_data=test_dataiter, monitor=None ,batch_end_callback=batch_end_callback, epoch_end_callback=mx.callback.do_checkpoint("./models/resnet"))
     else:
         loaded = mx.model.FeedForward.load('models/resnet', 100)
         continue_model = mx.model.FeedForward(ctx=mx.gpu(0), symbol = loaded.symbol, arg_params = loaded.arg_params, aux_params = loaded.aux_params, num_epoch=10000, learning_rate=0.01, momentum=0.9, wd=0.0001)
